@@ -46,7 +46,7 @@ jobs:
           cd build
           zip ../build.zip * .[^.]*
           echo "Build successful"
-      - run
+      - run:
         name: Deploy to AWS S3
         command: |
           if [ "${CURRENT_BRANCH}" == "master" ]
@@ -57,8 +57,8 @@ jobs:
             aws --region ${AWS_REGION} s3 sync ~/repo/build s3://${AWS_BUCKET_STAGING} --delete
           else
              aws --region ${AWS_REGION} s3 sync ~/repo/build s3://${AWS_DEV_BUCKET} --delete 
-          fi    
-  
+          fi
+
   deploy-to-aws-cloudfront:
     docker:
       - image: circleci/node:14.13.0
@@ -83,7 +83,7 @@ jobs:
           cd build
           zip ../build.zip * .[^.]*
           echo "Build successful"
-      - run
+      - run:
         name: Deploy to AWS S3
         command: |
           aws configure set preview.cloudfront
@@ -95,29 +95,27 @@ jobs:
             aws cloudfront create-invalidation --distribution-id ${STAGING_DISTRIBUTION_ID} --paths /\*
           else
             aws cloudfront create-invalidation --distribution-id ${DEV_DISTRIBUTION_ID} --paths /\*
-          fi   
+          fi
 
 workflows:
-    build_and_deploy:
-      jobs:
-        - build
-        - deploy-to-aws-s3:
-            requires:
-              - build
-            filters:
-              branches:
-                only:
-                  - develop
-                  - staging
-                  - master  
-        - deploy-to-aws-cloudfront:
-            requires:
-              - deploy-to-aws-s3
-            filters:
-              branches:
-                only:
-                  - develop
-                  - staging
-                  - master  
-
-   
+  build_and_deploy:
+    jobs:
+      - build
+      - deploy-to-aws-s3:
+          requires:
+            - build
+          filters:
+            branches:
+              only:
+                - develop
+                - staging
+                - master
+      - deploy-to-aws-cloudfront:
+          requires:
+            - deploy-to-aws-s3
+          filters:
+            branches:
+              only:
+                - develop
+                - staging
+                - master
